@@ -16,12 +16,11 @@ class FormManagerController extends Controller
 
     public function index()
     {
-        // Получаем только формы текущего пользователя
         $forms = Auth::user()->forms()
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(12); // Увеличиваем количество форм на странице для плиточного отображения
 
-        return view('form.index', compact('forms'));
+        return view('forms.index', compact('forms'));
     }
 
     // Добавляем метод create
