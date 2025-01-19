@@ -19,10 +19,16 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     // Маршруты для управления формами
-    Route::resource('forms', FormManagerController::class);
+    Route::get('forms', [FormManagerController::class, 'index'])->name('forms.index');
+    Route::get('forms/create', [FormManagerController::class, 'create'])->name('forms.create');
+    Route::post('forms', [FormManagerController::class, 'store'])->name('forms.store');
+    Route::get('forms/{form}/edit', [FormFieldController::class, 'index'])->name('forms.edit');
+    Route::put('forms/{form}', [FormManagerController::class, 'update'])->name('forms.update');
+    Route::delete('forms/{form}', [FormManagerController::class, 'destroy'])->name('forms.destroy');
 
     // Маршруты для полей формы
     Route::get('forms/{form}/fields', [FormFieldController::class, 'index'])->name('forms.fields.index');
+    Route::get('forms/{form}/fields/create', [FormFieldController::class, 'create'])->name('forms.fields.create');
     Route::post('forms/{form}/fields', [FormFieldController::class, 'store'])->name('forms.fields.store');
     Route::get('forms/{form}/fields/{field}/edit', [FormFieldController::class, 'edit'])->name('forms.fields.edit');
     Route::put('forms/{form}/fields/{field}', [FormFieldController::class, 'update'])->name('forms.fields.update');

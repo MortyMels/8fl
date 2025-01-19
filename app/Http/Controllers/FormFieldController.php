@@ -29,6 +29,19 @@ class FormFieldController extends Controller
         return view('forms.fields.index', compact('form', 'fields', 'dictionaries'));
     }
 
+    public function create(Form $form)
+    {
+        $this->authorize('manageFields', $form);
+        
+        // Получаем списки текущего пользователя и публичные
+        $dictionaries = Dictionary::where(function($query) {
+            $query->where('user_id', auth()->id())
+                  ->orWhere('is_public', true);
+        })->orderBy('name')->get();
+
+        return view('forms.fields.create', compact('form', 'dictionaries'));
+    }
+
     protected function validateField(Request $request): array
     {
         return $request->validate([
@@ -77,25 +90,29 @@ class FormFieldController extends Controller
     public function update(Request $request, Form $form, FormField $field)
     {
         $this->authorize('manageFields', $form);
-
         $validated = $this->validateField($request);
 
-        // Если выбран справочник, получаем его значения за исключением исключенных
+        // Если выбран справочник
         if (!empty($validated['dictionary_id'])) {
             $dictionary = Dictionary::findOrFail($validated['dictionary_id']);
             
-            // Получаем массив значений, которые НЕ были отмечены как исключенные
-            $excludedOptions = array_filter($request->input('excluded_options', []), function($item) {
+            // Получаем массив значений, которые были отмечены как исключенные
+            // Принудительно приводим к массиву и фильтруем
+            $excludedOptions = array_filter((array) $request->input('excluded_options', []), function($item) {
                 return $item !== null && !empty($item);
             });
             
-            $values = $dictionary->items()
-                ->whereNotIn('value', $excludedOptions)
+            // Если нет исключенных опций, устанавливаем null
+            $validated['excluded_options'] = !empty($excludedOptions) ? array_values($excludedOptions) : null;
+            
+            // Получаем все значения из справочника
+            $validated['options'] = $dictionary->items()
                 ->orderBy('value')
                 ->pluck('value')
                 ->toArray();
-                
-            $validated['options'] = $values;
+        } else {
+            // Если справочник не выбран, очищаем excluded_options
+            $validated['excluded_options'] = null;
         }
 
         // Устанавливаем значения по умолчанию

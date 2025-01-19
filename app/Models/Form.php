@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -36,12 +35,6 @@ class Form extends Model
         return $this->hasMany(FormSubmission::class);
     }
 
-    public function sharedUsers(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'form_shares')
-            ->withTimestamps();
-    }
-
     public function isAccessibleBy(?User $user): bool
     {
         if ($this->is_public) {
@@ -52,11 +45,7 @@ class Form extends Model
             return false;
         }
 
-        return $this->user_id === $user->id || 
-               $this->sharedUsers()
-                    ->select('users.id')
-                    ->where('users.id', $user->id)
-                    ->exists();
+        return $this->user_id === $user->id;
     }
 
     public function exports()
@@ -69,12 +58,10 @@ class Form extends Model
         DB::beginTransaction();
         
         try {
-            // Копируем основные данные формы
             $newForm = $this->replicate();
             $newForm->name = $this->name . ' (Копия)';
             $newForm->save();
 
-            // Копируем поля
             foreach ($this->fields as $field) {
                 $newField = $field->replicate();
                 $newField->form_id = $newForm->id;

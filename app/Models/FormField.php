@@ -100,8 +100,8 @@ class FormField extends Model
 
     public function setExcludedOptionsAttribute($value)
     {
-        if (is_array($value)) {
-            $this->attributes['excluded_options'] = json_encode(array_values(array_filter($value)));
+        if (is_array($value) && !empty($value)) {
+            $this->attributes['excluded_options'] = json_encode(array_values($value));
         } else {
             $this->attributes['excluded_options'] = null;
         }
