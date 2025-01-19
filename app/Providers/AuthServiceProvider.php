@@ -2,34 +2,29 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use App\Models\Form;
+use App\Models\Dictionary;
 use App\Policies\FormPolicy;
+use App\Policies\DictionaryPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
     /**
-     * Register services.
+     * The model to policy mappings for the application.
      *
-     * @return void
+     * @var array<class-string, class-string>
      */
-    public function register()
-    {
-        //
-    }
+    protected $policies = [
+        Form::class => FormPolicy::class,
+        Dictionary::class => DictionaryPolicy::class,
+    ];
 
     /**
-     * Bootstrap services.
-     *
-     * @return void
+     * Register any authentication / authorization services.
      */
-    public function boot()
+    public function boot(): void
     {
-        $this->configurePolicies();
-    }
-
-    protected function configurePolicies()
-    {
-        $this->app->bind(Form::class, FormPolicy::class);
+        $this->registerPolicies();
     }
 } 

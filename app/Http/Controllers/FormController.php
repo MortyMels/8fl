@@ -3,95 +3,71 @@
 namespace App\Http\Controllers;
 
 use App\Models\Form;
-use App\Models\FormField;
-use App\Models\FormSubmission;
 use Illuminate\Http\Request;
 
 class FormController extends Controller
 {
     public function show(Form $form)
     {
-        $fields = $form->fields()->orderBy('sort_order')->get();
-        return view('form.show', compact('form', 'fields'));
+        // Получаем поля формы, отсортированные по sort_order
+        $fields = $form->fields()
+            ->orderBy('sort_order')
+            ->get();
+
+        return view('forms.show', compact('form', 'fields'));
     }
 
     public function submit(Request $request, Form $form)
     {
-        try {
-            $fields = $form->fields;
+        // Получаем все поля формы
+        $fields = $form->fields;
+        
+        // Формируем правила валидации
+        $rules = [];
+        foreach ($fields as $field) {
+            $rule = ['nullable'];
             
-            // Собираем данные формы
-            $formData = [];
-            foreach ($fields as $field) {
-                $value = $request->input($field->name);
-                
-                // Обработка значений в зависимости от типа
-                switch ($field->type) {
-                    case 'checkbox':
-                        if (is_array($value)) {
-                            $formData[$field->name] = $value;
-                        }
-                        break;
-                        
-                    case 'date':
-                        if ($value) {
-                            $formData[$field->name] = date('Y-m-d', strtotime($value));
-                        }
-                        break;
-                        
-                    case 'number':
-                        if ($value !== null) {
-                            $formData[$field->name] = is_numeric($value) ? floatval($value) : null;
-                        }
-                        break;
-                        
-                    default:
-                        $formData[$field->name] = $value;
-                }
+            if ($field->required) {
+                $rule = ['required'];
             }
             
-            // Валидация
-            $validationRules = [];
-            foreach ($fields as $field) {
-                $rules = [];
-                if ($field->required) {
-                    $rules[] = 'required';
-                } else {
-                    $rules[] = 'nullable';
-                }
-                
-                switch ($field->type) {
-                    case 'number':
-                        $rules[] = 'numeric';
-                        break;
-                    case 'date':
-                        $rules[] = 'date';
-                        break;
-                }
-                
-                $validationRules[$field->name] = implode('|', $rules);
+            switch ($field->type) {
+                case 'number':
+                    $rule[] = 'numeric';
+                    break;
+                case 'date':
+                    $rule[] = 'date';
+                    break;
+                case 'checkbox':
+                    $rule = ['array'];
+                    if ($field->required) {
+                        $rule[] = 'min:1';
+                    }
+                    break;
             }
             
-            $validated = $request->validate($validationRules);
-            
-            // Сохраняем результат
-            $form->submissions()->create([
-                'data' => $formData
-            ]);
-
-            return redirect()->back()->with('success', 'Форма успешно отправлена!');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Произошла ошибка при отправке формы: ' . $e->getMessage())
-                ->withInput();
+            $rules["fields.{$field->id}"] = $rule;
         }
+        
+        // Валидируем данные
+        $validated = $request->validate($rules);
+        
+        // Сохраняем ответы
+        $form->submissions()->create([
+            'data' => $validated['fields']
+        ]);
+        
+        return redirect()
+            ->back()
+            ->with('success', 'Форма успешно отправлена');
     }
 
     public function submissions(Form $form)
     {
-        $submissions = $form->submissions()->latest()->paginate(10);
-        $fields = $form->fields()->pluck('label', 'name')->toArray();
-        
-        return view('form.submissions', compact('form', 'submissions', 'fields'));
+        $submissions = $form->submissions()
+            ->latest()
+            ->paginate(20);
+
+        return view('forms.submissions', compact('form', 'submissions'));
     }
 } 

@@ -86,39 +86,77 @@
                                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                             {{ $field->required ? 'required' : '' }}>
                                         <option value="">Выберите опцию</option>
-                                        @foreach($field->options as $option)
-                                            <option value="{{ $option }}">{{ $option }}</option>
-                                        @endforeach
+                                        @if($field->dictionary_id)
+                                            @foreach($field->dictionary->values as $value)
+                                                <option value="{{ $value->value }}">{{ $value->value }}</option>
+                                            @endforeach
+                                        @else
+                                            @foreach($field->options ?? [] as $option)
+                                                <option value="{{ $option }}">{{ $option }}</option>
+                                            @endforeach
+                                        @endif
                                     </select>
                                     @break
 
                                 @case('radio')
                                     <div class="space-y-2">
-                                        @foreach($field->options as $option)
-                                            <div class="flex items-center">
-                                                <input type="radio" 
-                                                       name="{{ $field->name }}" 
-                                                       value="{{ $option }}"
-                                                       class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                                       {{ $field->required ? 'required' : '' }}>
-                                                <label class="ml-2">{{ $option }}</label>
-                                            </div>
-                                        @endforeach
+                                        @if($field->dictionary_id)
+                                            @foreach($field->dictionary->values as $value)
+                                                <div class="flex items-center">
+                                                    <input type="radio" 
+                                                           name="{{ $field->name }}" 
+                                                           value="{{ $value->value }}"
+                                                           class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                           {{ $field->required ? 'required' : '' }}>
+                                                    <label class="ml-2">{{ $value->value }}</label>
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            @foreach($field->options ?? [] as $option)
+                                                <div class="flex items-center">
+                                                    <input type="radio" 
+                                                           name="{{ $field->name }}" 
+                                                           value="{{ $option }}"
+                                                           class="rounded-full border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                           {{ $field->required ? 'required' : '' }}>
+                                                    <label class="ml-2">{{ $option }}</label>
+                                                </div>
+                                            @endforeach
+                                        @endif
                                     </div>
                                     @break
 
                                 @case('checkbox')
                                     <div class="space-y-2">
-                                        @foreach($field->options as $option)
-                                            <div class="flex items-center">
-                                                <input type="checkbox" 
-                                                       name="{{ $field->name }}[]" 
-                                                       value="{{ $option }}"
-                                                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                                <label class="ml-2">{{ $option }}</label>
-                                            </div>
-                                        @endforeach
+                                        @if($field->dictionary_id)
+                                            @foreach($field->dictionary->values as $value)
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" 
+                                                           name="{{ $field->name }}[]" 
+                                                           value="{{ $value->value }}"
+                                                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    <label class="ml-2">{{ $value->value }}</label>
+                                                </div>
+                                            @endforeach
+                                        @else
+                                            @foreach($field->options ?? [] as $option)
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" 
+                                                           name="{{ $field->name }}[]" 
+                                                           value="{{ $option }}"
+                                                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                    <label class="ml-2">{{ $option }}</label>
+                                                </div>
+                                            @endforeach
+                                        @endif
                                     </div>
+                                    @break
+
+                                @case('time')
+                                    <input type="time" 
+                                           name="{{ $field->name }}" 
+                                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                           {{ $field->required ? 'required' : '' }}>
                                     @break
                             @endswitch
                         </div>

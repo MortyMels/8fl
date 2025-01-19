@@ -5,45 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Form;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Support\Facades\Auth;
 
 class FormManagerController extends Controller
 {
-    use AuthorizesRequests, ValidatesRequests;
-
     public function __construct()
     {
-        $this->middleware('auth')->except(['index', 'show']);
+        $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function index()
     {
-        $query = Form::query();
+        // Получаем только формы текущего пользователя
+        $forms = Auth::user()->forms()
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
 
-        if ($request->user()) {
-            // Для авторизованных пользователей показываем их формы, формы с доступом и публичные
-            $query->where(function ($q) use ($request) {
-                $q->where('user_id', $request->user()->id)
-                  ->orWhereHas('sharedUsers', function ($q) use ($request) {
-                      $q->where('users.id', $request->user()->id);
-                  })
-                  ->orWhere('is_public', true);
-            });
-        } else {
-            // Для гостей показываем только публичные формы
-            $query->where('is_public', true);
-        }
-
-        $forms = $query->latest()->get();
-        return view('forms.index', compact('forms'));
+        return view('form.index', compact('forms'));
     }
 
+    // Добавляем метод create
     public function create()
     {
         return view('forms.create');
     }
 
+    // Добавляем метод store для сохранения формы
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,21 +39,31 @@ class FormManagerController extends Controller
             'is_public' => 'boolean'
         ]);
 
-        $form = $request->user()->forms()->create($validated);
+        $form = Auth::user()->forms()->create([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'is_public' => $validated['is_public'] ?? false
+        ]);
 
-        return redirect()->route('forms.index')
+        return redirect()
+            ->route('forms.edit', $form)
             ->with('success', 'Форма успешно создана');
     }
 
+    // Добавляем метод edit
     public function edit(Form $form)
     {
         $this->authorize('update', $form);
-        $users = User::where('id', '!=', auth()->id())->get();
-        $sharedUsers = $form->sharedUsers()->pluck('id')->toArray();
         
+        // Получаем список пользователей, кроме текущего
+        $users = User::where('id', '!=', auth()->id())->get();
+        // Получаем ID пользователей, которым предоставлен доступ
+        $sharedUsers = $form->sharedUsers()->pluck('users.id')->toArray();
+
         return view('forms.edit', compact('form', 'users', 'sharedUsers'));
     }
 
+    // Добавляем метод update
     public function update(Request $request, Form $form)
     {
         $this->authorize('update', $form);
@@ -75,26 +72,39 @@ class FormManagerController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_public' => 'boolean',
-            'shared_users' => 'array'
+            'shared_users' => 'nullable|array',
+            'shared_users.*' => 'exists:users,id'
         ]);
 
-        $form->update($validated);
+        $form->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'is_public' => $validated['is_public'] ?? false
+        ]);
 
         // Обновляем список пользователей с доступом
         if (isset($validated['shared_users'])) {
             $form->sharedUsers()->sync($validated['shared_users']);
+        } else {
+            $form->sharedUsers()->detach();
         }
 
-        return redirect()->route('forms.index')
+        return redirect()
+            ->route('forms.index')
             ->with('success', 'Форма успешно обновлена');
     }
 
+    // Добавляем метод destroy
     public function destroy(Form $form)
     {
         $this->authorize('delete', $form);
         
         $form->delete();
-        return redirect()->route('forms.index')
+
+        return redirect()
+            ->route('forms.index')
             ->with('success', 'Форма успешно удалена');
     }
+
+    // ... остальные методы ...
 } 

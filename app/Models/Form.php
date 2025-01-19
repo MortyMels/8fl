@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Form extends Model
 {
@@ -52,6 +53,39 @@ class Form extends Model
         }
 
         return $this->user_id === $user->id || 
-               $this->sharedUsers()->where('users.id', $user->id)->exists();
+               $this->sharedUsers()
+                    ->select('users.id')
+                    ->where('users.id', $user->id)
+                    ->exists();
+    }
+
+    public function exports()
+    {
+        return $this->hasMany(FormExport::class);
+    }
+
+    public function duplicate()
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Копируем основные данные формы
+            $newForm = $this->replicate();
+            $newForm->name = $this->name . ' (Копия)';
+            $newForm->save();
+
+            // Копируем поля
+            foreach ($this->fields as $field) {
+                $newField = $field->replicate();
+                $newField->form_id = $newForm->id;
+                $newField->save();
+            }
+
+            DB::commit();
+            return $newForm;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
     }
 } 
