@@ -3,75 +3,62 @@
 @section('title', 'Мои формы')
 
 @section('content')
-<div class="card">
-    <div class="card-header flex justify-between items-center">
-        <h1 class="text-xl font-semibold text-gray-900">Мои формы</h1>
-        <a href="{{ route('forms.create') }}" class="btn btn-primary">
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Мои формы</h1>
+        <a href="{{ route('forms.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-150 ease-in-out">
             Создать форму
         </a>
     </div>
 
     @if($forms->isEmpty())
-        <div class="card-body text-center text-gray-500">
-            <p class="text-lg">У вас пока нет созданных форм</p>
-            <p class="mt-2 text-sm">Нажмите "Создать форму" чтобы начать</p>
+        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+            <p class="text-lg text-gray-600">У вас пока нет созданных форм</p>
+            <p class="mt-2 text-sm text-gray-500">Нажмите "Создать форму" чтобы начать</p>
         </div>
     @else
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Название
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Описание
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Действия
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($forms as $form)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ $form->name }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm text-gray-500">
-                                    {{ Str::limit($form->description, 100) }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex space-x-4">
-                                    <a href="{{ route('forms.show', $form) }}" 
-                                       class="text-blue-600 hover:text-blue-900">
-                                        Просмотр
-                                    </a>
-                                    <a href="{{ route('forms.edit', $form) }}" 
-                                       class="text-blue-600 hover:text-blue-900">
-                                        Редактировать
-                                    </a>
-                                    <form action="{{ route('forms.destroy', $form) }}" 
-                                          method="POST" 
-                                          class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" 
-                                                class="text-red-600 hover:text-red-900"
-                                                onclick="return confirm('Вы уверены?')">
-                                            Удалить
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($forms as $form)
+                <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ $form->name }}</h2>
+                        <p class="text-gray-600 mb-4 h-12 overflow-hidden">
+                            {{ Str::limit($form->description, 100) }}
+                        </p>
+                        
+                        <div class="border-t pt-4">
+                            <div class="grid grid-cols-2 gap-2">
+                                <a href="{{ route('forms.show', $form) }}" 
+                                   class="inline-flex justify-center items-center px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition duration-150 ease-in-out text-sm">
+                                    <span>Заполнить</span>
+                                </a>
+                                
+                                <a href="{{ route('forms.submissions', $form) }}" 
+                                   class="inline-flex justify-center items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition duration-150 ease-in-out text-sm">
+                                    <span>Результаты</span>
+                                </a>
+                                
+                                <a href="{{ route('forms.edit', $form) }}" 
+                                   class="inline-flex justify-center items-center px-4 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition duration-150 ease-in-out text-sm">
+                                    <span>Редактировать</span>
+                                </a>
+                                
+                                <form action="{{ route('forms.destroy', $form) }}" 
+                                      method="POST" 
+                                      class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            onclick="return confirm('Вы уверены, что хотите удалить эту форму?')"
+                                            class="w-full px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition duration-150 ease-in-out text-sm">
+                                        Удалить
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
         </div>
     @endif
 </div>
